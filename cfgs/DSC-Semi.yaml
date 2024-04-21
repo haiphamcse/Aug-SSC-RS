@@ -1,5 +1,5 @@
 DATALOADER:
-  NUM_WORKERS: 4
+  NUM_WORKERS: 2
 DATASET:
   CONFIG_FILE: data/semantic-kitti.yaml
   DATA_ROOT: ../LMSCNet/data/dataset/sequences
@@ -71,19 +71,19 @@ OPTIMIZER:
   TYPE: Adam
   WEIGHT_DECAY: NA
 OUTPUT:
-  BEST_LOSS: 6.963726997375488
-  BEST_METRIC: 0.24609588491312231
-  OUTPUT_PATH: ./outputs/DSC-AFC_SemanticKITTI_1230_011744
+  BEST_LOSS: 8.634896278381348
+  BEST_METRIC: 0.16700401410640084
+  OUTPUT_PATH: ./outputs/DSC-AFC_SemanticKITTI_1230_111215
   OUT_ROOT: ./outputs/
 SCHEDULER:
   FREQUENCY: epoch
   LR_POWER: 0.98
   TYPE: power_iteration
 STATUS:
-  BEST_LOSS: ./outputs/DSC-AFC_SemanticKITTI_1230_011744/chkpt/best-loss
-  BEST_METRIC: ./outputs/DSC-AFC_SemanticKITTI_1230_011744/chkpt/best-metric
-  CONFIG: cfgs/DSC-Base.yaml
-  LAST: ./outputs/DSC-AFC_SemanticKITTI_1230_011744/chkpt/last
+  BEST_LOSS: ./outputs/DSC-AFC_SemanticKITTI_1230_111215/chkpt/best-loss
+  BEST_METRIC: ./outputs/DSC-AFC_SemanticKITTI_1230_111215/chkpt/best-metric
+  CONFIG: cfgs/DSC-Semi.yaml
+  LAST: ./outputs/DSC-AFC_SemanticKITTI_1230_111215/chkpt/last
   RESUME: true
 TRAIN:
   BATCH_SIZE: 2

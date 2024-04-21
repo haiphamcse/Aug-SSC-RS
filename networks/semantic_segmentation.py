@@ -4,7 +4,9 @@ import torch
 import torch.nn.functional as F
 import torch_scatter
 
-import spconv
+# import spconv
+import spconv.pytorch as spconv
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -175,26 +177,26 @@ class SemanticBranch(nn.Module):
                                 reduce_channels=128, name="proj3")
 
         self.phase = phase
-        if phase == 'trainval':
-            num_class = self.nbr_class  # SemanticKITTI: 19
-            self.out2 = nn.Sequential(
-                nn.Linear(64, 64, bias=False),
-                nn.BatchNorm1d(64, ),
-                nn.LeakyReLU(0.1),
-                nn.Linear(64, num_class)
-            )
-            self.out4 = nn.Sequential(
-                nn.Linear(128, 64, bias=False),
-                nn.BatchNorm1d(64, ),
-                nn.LeakyReLU(0.1),
-                nn.Linear(64, num_class)
-            )
-            self.out8 = nn.Sequential(
-                nn.Linear(256, 64, bias=False),
-                nn.BatchNorm1d(64, ),
-                nn.LeakyReLU(0.1),
-                nn.Linear(64, num_class)
-            )
+        # if phase == 'trainval':
+        #     num_class = self.nbr_class  # SemanticKITTI: 19
+        #     self.out2 = nn.Sequential(
+        #         nn.Linear(64, 64, bias=False),
+        #         nn.BatchNorm1d(64, ),
+        #         nn.LeakyReLU(0.1),
+        #         nn.Linear(64, num_class)
+        #     )
+        #     self.out4 = nn.Sequential(
+        #         nn.Linear(128, 64, bias=False),
+        #         nn.BatchNorm1d(64, ),
+        #         nn.LeakyReLU(0.1),
+        #         nn.Linear(64, num_class)
+        #     )
+        #     self.out8 = nn.Sequential(
+        #         nn.Linear(256, 64, bias=False),
+        #         nn.BatchNorm1d(64, ),
+        #         nn.LeakyReLU(0.1),
+        #         nn.Linear(64, num_class)
+        #     )
 
 
     def bev_projection(self, vw_features, vw_coord, sizes, batch_size):
@@ -236,23 +238,23 @@ class SemanticBranch(nn.Module):
         proj3_bev = self.bev_projection(proj3_vw, vw3_coord, (np.array(self.sizes, np.int32) // 8)[::-1], batch_size)
 
 
-        if self.phase == 'trainval':
-            index_02 = torch.cat([info[2]['bxyz_indx'][:, 0].unsqueeze(-1),
-                               torch.flip(info[2]['bxyz_indx'], dims=[1])[:, :3]], dim=1)
-            index_04 = torch.cat([info[4]['bxyz_indx'][:, 0].unsqueeze(-1),
-                               torch.flip(info[4]['bxyz_indx'], dims=[1])[:, :3]], dim=1)
-            index_08 = torch.cat([info[8]['bxyz_indx'][:, 0].unsqueeze(-1),
-                               torch.flip(info[8]['bxyz_indx'], dims=[1])[:, :3]], dim=1)
-            vw_label_02 = voxel_sem_target(index_02.int(), pw_label.int())[0]
-            vw_label_04 = voxel_sem_target(index_04.int(), pw_label.int())[0]
-            vw_label_08 = voxel_sem_target(index_08.int(), pw_label.int())[0]
-            return dict(
-                mss_bev_dense = [proj1_bev, proj2_bev, proj3_bev],
-                mss_logits_list = [
-                    [vw_label_02.clone(), self.out2(proj1_vw)],
-                    [vw_label_04.clone(), self.out4(proj2_vw)],
-                    [vw_label_08.clone(), self.out8(proj3_vw)]]
-            )
+        # if self.phase == 'trainval':
+        #     index_02 = torch.cat([info[2]['bxyz_indx'][:, 0].unsqueeze(-1),
+        #                        torch.flip(info[2]['bxyz_indx'], dims=[1])[:, :3]], dim=1)
+        #     index_04 = torch.cat([info[4]['bxyz_indx'][:, 0].unsqueeze(-1),
+        #                        torch.flip(info[4]['bxyz_indx'], dims=[1])[:, :3]], dim=1)
+        #     index_08 = torch.cat([info[8]['bxyz_indx'][:, 0].unsqueeze(-1),
+        #                        torch.flip(info[8]['bxyz_indx'], dims=[1])[:, :3]], dim=1)
+        #     vw_label_02 = voxel_sem_target(index_02.int(), pw_label.int())[0]
+        #     vw_label_04 = voxel_sem_target(index_04.int(), pw_label.int())[0]
+        #     vw_label_08 = voxel_sem_target(index_08.int(), pw_label.int())[0]
+        #     return dict(
+        #         mss_bev_dense = [proj1_bev, proj2_bev, proj3_bev],
+        #         mss_logits_list = [
+        #             [vw_label_02.clone(), self.out2(proj1_vw)],
+        #             [vw_label_04.clone(), self.out4(proj2_vw)],
+        #             [vw_label_08.clone(), self.out8(proj3_vw)]]
+        #     )
 
         return dict(
             mss_bev_dense = [proj1_bev, proj2_bev, proj3_bev]
@@ -262,20 +264,20 @@ class SemanticBranch(nn.Module):
         if self.phase == 'trainval':
             out_dict = self.forward_once(data_dict['vw_features'], 
                 data_dict['coord_ind'], data_dict['full_coord'], example['points_label'], data_dict['info'])
-            all_teach_pair = out_dict['mss_logits_list']
+            # all_teach_pair = out_dict['mss_logits_list']
 
-            class_weights = self.get_class_weights().to(device=data_dict['vw_features'].device, dtype=data_dict['vw_features'].dtype)
+            # class_weights = self.get_class_weights().to(device=data_dict['vw_features'].device, dtype=data_dict['vw_features'].dtype)
             loss_dict = {}
-            for i in range(len(all_teach_pair)):
-                teach_pair = all_teach_pair[i]
-                voxel_labels_copy = teach_pair[0].long().clone()
-                voxel_labels_copy[voxel_labels_copy == 0] = 256
-                voxel_labels_copy = voxel_labels_copy - 1
+            # for i in range(len(all_teach_pair)):
+            #     teach_pair = all_teach_pair[i]
+            #     voxel_labels_copy = teach_pair[0].long().clone()
+            #     voxel_labels_copy[voxel_labels_copy == 0] = 256
+            #     voxel_labels_copy = voxel_labels_copy - 1
 
-                res04_loss = lovasz_softmax(F.softmax(teach_pair[1], dim=1), voxel_labels_copy, ignore=255)
-                res04_loss2 = F.cross_entropy(teach_pair[1], voxel_labels_copy, weight=class_weights, ignore_index=255)
-                loss_dict["vw_" + str(i) + "lovasz_loss"] = res04_loss
-                loss_dict["vw_" + str(i) + "ce_loss"] = res04_loss2
+            #     res04_loss = lovasz_softmax(F.softmax(teach_pair[1], dim=1), voxel_labels_copy, ignore=255)
+            #     res04_loss2 = F.cross_entropy(teach_pair[1], voxel_labels_copy, weight=class_weights, ignore_index=255)
+            #     loss_dict["vw_" + str(i) + "lovasz_loss"] = res04_loss
+            #     loss_dict["vw_" + str(i) + "ce_loss"] = res04_loss2
             return dict(
                 mss_bev_dense=out_dict['mss_bev_dense'],
                 loss=loss_dict

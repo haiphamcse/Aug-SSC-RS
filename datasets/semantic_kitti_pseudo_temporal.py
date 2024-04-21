@@ -4,6 +4,8 @@ import torch
 import os
 import yaml
 import numpy as np
+from PIL import Image
+from torchvision import transforms
 
 def mask_op(data, x_min, x_max):
     mask = (data > x_min) & (data < x_max)
@@ -61,9 +63,9 @@ class SemanticKitti(torch.utils.data.Dataset):
                  lims,
                  sizes,
                  augmentation=False,
-                 shuffle_index=False):
+                 shuffle_index=False,
+                 color_jitter=(0.4, 0.4, 0.4)):
         self.data_root = data_root
-        self.data_root_semi = "../LMSCNet/data/dataset/sequences_semi_5_percent"
         self.data_config = yaml.safe_load(open(data_config_file, 'r'))
         self.sequences = self.data_config["split"][setname]
         self.setname = setname
@@ -84,8 +86,18 @@ class SemanticKitti(torch.utils.data.Dataset):
         self.num_files_ = len(self.filepaths['occupancy'])
         print("Using {} scans from sequences {}".format(self.num_files_, self.sequences))
         print(f"Is aug: {self.augmentation}")
-        if self.setname != "test":
-            print(f"Len of labels: {len(self.filepaths['label_1_1'])}")
+
+        # self.color_jitter = (
+        #     transforms.ColorJitter(*color_jitter) if color_jitter else None
+        # )
+        self.normalize_rgb = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                # transforms.Normalize(
+                #     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                # ),
+            ]
+        )
 
     def get_filepaths(self,):
         # fill in with names, checking that all sequences are complete
@@ -115,57 +127,8 @@ class SemanticKitti(torch.utils.data.Dataset):
                 # occluded
                 self.filepaths['occluded'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.occluded')))
 
-            self.filepaths['occupancy'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.bin')))
-
-            # if self.setname == 'valid':
-            #     # Scale 1_1
-            #     self.filepaths['label_1_1'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.label')))
-            #     self.filepaths['invalid_1_1'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.invalid')))
-            #     # Scale 1_2
-            #     self.filepaths['label_1_2'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.label_1_2')))
-            #     self.filepaths['invalid_1_2'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.invalid_1_2')))
-            #     # Scale 1_4
-            #     self.filepaths['label_1_4'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.label_1_4')))
-            #     self.filepaths['invalid_1_4'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.invalid_1_4')))
-            #     # Scale 1_4
-            #     self.filepaths['label_1_8'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.label_1_8')))
-            #     self.filepaths['invalid_1_8'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.invalid_1_8')))
-
-            #     # occluded
-            #     self.filepaths['occluded'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.occluded')))
-
-            #     self.filepaths['occupancy'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.bin')))
-            # elif self.setname == "train":
-            #     if self.setname != 'test':
-            #         label_1_1_list = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.label')))
-            #         invalid_1_1_list = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.invalid')))
-            #         label_1_2_list = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.label_1_2')))
-            #         invalid_1_2_list = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.invalid_1_2')))
-            #         label_1_4_list = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.label_1_4')))
-            #         invalid_1_4_list = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.invalid_1_4')))
-            #         label_1_8_list = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.label_1_8')))
-            #         invalid_1_8_list = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.invalid_1_8')))
-            #         occlud_path = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.occluded')))
-            #         for i in range(len(label_1_1_list)):
-            #             file = label_1_1_list[i]
-            #             if(os.path.isfile(file.replace(self.data_root, self.data_root_semi))):
-            #                 self.filepaths['label_1_1'].append(label_1_1_list[i])
-            #                 self.filepaths['invalid_1_1'].append(invalid_1_1_list[i])
-            #                 self.filepaths['label_1_2'].append(label_1_2_list[i])
-            #                 self.filepaths['invalid_1_2'].append(invalid_1_2_list[i])
-            #                 self.filepaths['label_1_4'].append(label_1_4_list[i])
-            #                 self.filepaths['invalid_1_4'].append(invalid_1_4_list[i])
-            #                 self.filepaths['label_1_8'].append(label_1_8_list[i])
-            #                 self.filepaths['invalid_1_8'].append(invalid_1_8_list[i])
-            #                 self.filepaths['occluded'].append(occlud_path[i])
-            #     occ_path = sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.bin')))
-            #     for i in range(len(occ_path)):
-            #         file = occ_path[i]
-            #         if(os.path.isfile(file.replace(self.data_root, self.data_root_semi))):
-            #             self.filepaths['occupancy'].append(occ_path[i])
-            # else:
-            #     self.filepaths['occupancy'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.bin')))
-
+            self.filepaths['occupancy'] += sorted(glob(os.path.join(self.data_root.replace('sequences', 'unidepth/accumulated_voxels'), seq, 'voxels', '*.pseudo')))
+        print(self.filepaths['occupancy'])
     def get_data(self, idx, flip_type):
         data_collection = {}
         sc_remap_lut = self.get_remap_lut(completion=True)
@@ -173,13 +136,11 @@ class SemanticKitti(torch.utils.data.Dataset):
         for typ in self.filepaths.keys():
             scale = int(typ.split('_')[-1]) if 'label' in typ or 'invalid' in typ else 1
             if 'label' in typ:
-                try:
-                    scan_data = np.fromfile(self.filepaths[typ][idx], dtype=np.uint16)
-                except:
-                    print(f"Error: {idx}, {typ}")
+                scan_data = np.fromfile(self.filepaths[typ][idx], dtype=np.uint16)
                 if scale == 1:
                     scan_data = sc_remap_lut[scan_data]
             else:
+                # print(self.filepaths[typ][idx])
                 scan_data = unpack(np.fromfile(self.filepaths[typ][idx], dtype=np.uint8))
             scan_data = scan_data.reshape((self.sizes[0]//scale, self.sizes[1]//scale, self.sizes[2]//scale))
             scan_data = scan_data.astype(np.float32)
@@ -187,36 +148,51 @@ class SemanticKitti(torch.utils.data.Dataset):
                 scan_data = augmentation_random_flip(scan_data, flip_type)
             data_collection[typ] = torch.from_numpy(scan_data)
 
-        points_path = self.filepaths['occupancy'][idx].replace('voxels', 'velodyne')
-        points = np.fromfile(points_path, dtype=np.float32)
+        points_path = self.filepaths['occupancy'][idx].replace('accumulated_voxels', 'accumulated_lidar/sequences').replace('voxels', '').replace('pseudo', 'npy')
+        # print(points_path)
+        points = np.load(points_path)[:, :4]
+        # points = np.fromfile(points_path, dtype=np.float32)
+        
         points = points.reshape((-1, 4))
-
-        if self.setname != 'test':
-            points_label_path = self.filepaths['occupancy'][idx].replace('voxels', 'labels').replace('.bin', '.label')
-            points_label = np.fromfile(points_label_path, dtype=np.uint32)
-            points_label = points_label.reshape((-1))
-            points_label = points_label & 0xFFFF  # semantic label in lower half
-            points_label = ss_remap_lut[points_label]
+        # print(points.shape)
+        # if self.setname != 'test':
+        #     points_label_path = self.filepaths['occupancy'][idx].replace('voxels', 'labels').replace('.bin', '.label')
+        #     points_label = np.fromfile(points_label_path, dtype=np.uint32)
+        #     points_label = points_label.reshape((-1))
+        #     points_label = points_label & 0xFFFF  # semantic label in lower half
+        #     points_label = ss_remap_lut[points_label]
 
         if self.shuffle_index:
             pt_idx = np.random.permutation(np.arange(0, points.shape[0]))
             points = points[pt_idx]
-            if self.setname != 'test':
-                points_label = points_label[pt_idx]
+            # if self.setname != 'test':
+            #     points_label = points_label[pt_idx]
 
         if self.lims:
             filter_mask = get_mask(points, self.lims)
             points = points[filter_mask]
-            if self.setname != 'test':
-                points_label = points_label[filter_mask]
+            # if self.setname != 'test':
+            #     points_label = points_label[filter_mask]
 
         if self.augmentation:
             points = augmentation_random_flip(points, flip_type, is_scan=True)
 
         data_collection['points'] = torch.from_numpy(points)
-        if self.setname != 'test':
-            data_collection['points_label'] = torch.from_numpy(points_label)
+        # if self.setname != 'test':
+        #     data_collection['points_label'] = torch.from_numpy(points_label)
+        data_collection['points_label'] = torch.from_numpy(filter_mask)
 
+        # rgb_path = self.filepaths['occupancy'][idx].replace('voxels', 'image_2').replace('sequences_msnet3d_sweep10', 'sequences').replace('pseudo', 'png')
+        # img = Image.open(rgb_path)
+
+        # Image augmentation
+        # if self.color_jitter is not None:
+        #     img = self.color_jitter(img)
+
+        # PIL to numpy
+        # img = np.asarray(img)
+        # data_collection['img'] = self.normalize_rgb(img).reshape(-1,3)[filter_mask]
+        data_collection['img'] = torch.from_numpy(np.load(points_path)[:, 4:][filter_mask])
         return data_collection
 
 

@@ -106,6 +106,7 @@ class BEVFusionv1(nn.Module):
 class BEVUNetv1(nn.Module):
     def __init__(self, n_class, n_height, dilation, bilinear, group_conv, input_batch_norm, dropout, circular_padding, dropblock):
         super().__init__()
+        # self.inc = inconv(64, 64, dilation, input_batch_norm, circular_padding)
         self.inc = inconv(64, 64, dilation, input_batch_norm, circular_padding)
         self.down1 = down(64, 128, dilation, group_conv, circular_padding)
         self.down2 = down(128, 256, dilation, group_conv, circular_padding)

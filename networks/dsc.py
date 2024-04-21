@@ -11,6 +11,7 @@ from .bev_net import BEVUNet, BEVUNetv1
 from .completion import CompletionBranch
 from .semantic_segmentation import SemanticBranch
 from utils.lovasz_losses import lovasz_softmax
+from utils.monoscene_loss import *
 
 class DSC(nn.Module):
     def __init__(self, cfg, phase='trainval'):
@@ -44,15 +45,23 @@ class DSC(nn.Module):
         with torch.no_grad():
             indicator = [0]
             pc_ibatch = []
+            img_ibatch = []
             for i in range(batch_size):
                 pc_i = example['points'][i]
+                # img_i = example['img'][i]
+                # breakpoint()
+                # valid = (pc_i[:, 0] >= 0) & (pc_i[:, 2] < 2)
+                # pc_i = pc_i[valid]
+                # img_i = img_i[valid]
+
                 pc_ibatch.append(pc_i)
+                # img_ibatch.append(img_i)
                 indicator.append(pc_i.size(0) + indicator[-1])
             pc = torch.cat(pc_ibatch, dim=0)
+            # img = torch.cat(img_ibatch, dim=0)
         vw_feature, coord_ind, full_coord, info = self.preprocess(pc, indicator)  # N, C; B, C, W, H, D
         coord = torch.cat([coord_ind[:, 0].reshape(-1, 1), torch.flip(coord_ind, dims=[1])[:, :3]], dim=1)
         bev_dense = self.sem_branch.bev_projection(vw_feature, coord, np.array(self.sizes, np.int32)[::-1], batch_size) # B, C, H, W
-        torch.cuda.empty_cache()
 
         ss_data_dict = {}
         ss_data_dict['vw_features'] = vw_feature
@@ -88,11 +97,15 @@ class DSC(nn.Module):
         loss_1_1 += lovasz_softmax(torch.nn.functional.softmax(scores, dim=1), labels.long(), ignore=255)
         loss_1_1 *= 3
 
-        loss_seg = sum(ss_loss_dict.values())
+        # geo_loss = geo_scal_loss(scores, labels.long())
+        # sem_loss = sem_scal_loss(scores, labels.long())
+        # loss_seg = sum(ss_loss_dict.values())
         loss_com = sum(sc_loss_dict.values())
-        loss_total = loss_1_1 + loss_seg + loss_com
-        loss = {'total': loss_total, 'semantic_1_1': loss_1_1, 'semantic_seg': loss_seg, 'scene_completion': loss_com}
+        loss_total = loss_1_1 + loss_com
 
+        # loss = {'total': loss_total, 'semantic_1_1': loss_1_1, 'semantic_seg': loss_seg, 'scene_completion': loss_com}
+        loss = {'total': loss_total, 'semantic_1_1': loss_1_1, 'scene_completion': loss_com}
+        
         return loss
 
     def weights_initializer(self, m):
@@ -131,8 +144,8 @@ class DSC(nn.Module):
         return scales
 
     def get_validation_loss_keys(self):
-        return ['total', 'semantic_1_1', 'semantic_seg', 'scene_completion']
+        return ['total', 'semantic_1_1', 'scene_completion', ]
 
     def get_train_loss_keys(self):
-        return ['total', 'semantic_1_1', 'semantic_seg', 'scene_completion']
+        return ['total', 'semantic_1_1', 'scene_completion', ]
 

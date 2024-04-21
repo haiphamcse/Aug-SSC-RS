@@ -91,7 +91,7 @@ class PcPreprocessor(nn.Module):
         else:
             return pc_feature
 
-    def extract_geometry_features(self, pc, info):
+    def extract_geometry_features(self, pc, info, color=None):
         ms_mean_features = {}
         ms_pc_features = []
         for scale in self.feature_list.keys():
@@ -106,13 +106,14 @@ class PcPreprocessor(nn.Module):
                         * F.relu(self.aggtopproj(torch.cat(ms_pc_features, dim=1)))
         agg_tpfeature = self.aggfusion(agg_tpfeature)
 
+        # agg_tpfeature = torch.cat((agg_tpfeature, color), dim=1)
         bxyz_indx_tgt = info[self.target_scale]['bxyz_indx'].long()
         index, value = torch.unique(bxyz_indx_tgt, return_inverse=True, dim=0)
         maxf = torch_scatter.scatter_max(agg_tpfeature, value, dim=0)[0]
 
         return maxf, index, value
 
-    def forward(self, pc, indicator):
+    def forward(self, pc, indicator, color=None):
         indicator_t = []
         tensor = torch.ones((1,), dtype=torch.long).to(pc)
         for i in range(len(indicator) - 1):
@@ -132,7 +133,7 @@ class PcPreprocessor(nn.Module):
             xyz_res = torch.stack([xres, yres, zres], dim=-1)
             info[scale] = {'bxyz_indx': bxyz_indx, 'xyz_res': xyz_res}
 
-        voxel_feature, coord_ind, full_coord = self.extract_geometry_features(pc, info)
+        voxel_feature, coord_ind, full_coord = self.extract_geometry_features(pc, info, color)
 
         return voxel_feature, coord_ind, full_coord, info
 

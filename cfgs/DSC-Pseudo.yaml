@@ -2,7 +2,7 @@ DATALOADER:
   NUM_WORKERS: 4
 DATASET:
   CONFIG_FILE: data/semantic-kitti.yaml
-  DATA_ROOT: ../LMSCNet/data/dataset/sequences
+  DATA_ROOT: data/dataset/sequences
   GRID_METERS:
   - 0.2
   - 0.2
@@ -62,7 +62,7 @@ DATASET:
   - 1168181
   TYPE: SemanticKITTI
 MODEL:
-  TYPE: DSC-AFC
+  TYPE: DSC-AFC-PSeudo
 OPTIMIZER:
   BASE_LR: 0.001
   BETA1: 0.9
@@ -71,22 +71,22 @@ OPTIMIZER:
   TYPE: Adam
   WEIGHT_DECAY: NA
 OUTPUT:
-  BEST_LOSS: 6.963726997375488
-  BEST_METRIC: 0.24609588491312231
-  OUTPUT_PATH: ./outputs/DSC-AFC_SemanticKITTI_1230_011744
+  BEST_LOSS: 4.927070617675781
+  BEST_METRIC: 0.1319151700373578
+  OUTPUT_PATH: ./outputs/DSC-AFC-PSeudo_SemanticKITTI_0413_165328
   OUT_ROOT: ./outputs/
 SCHEDULER:
   FREQUENCY: epoch
   LR_POWER: 0.98
   TYPE: power_iteration
 STATUS:
-  BEST_LOSS: ./outputs/DSC-AFC_SemanticKITTI_1230_011744/chkpt/best-loss
-  BEST_METRIC: ./outputs/DSC-AFC_SemanticKITTI_1230_011744/chkpt/best-metric
-  CONFIG: cfgs/DSC-Base.yaml
-  LAST: ./outputs/DSC-AFC_SemanticKITTI_1230_011744/chkpt/last
+  BEST_LOSS: ./outputs/DSC-AFC-PSeudo_SemanticKITTI_0413_165328/chkpt/best-loss
+  BEST_METRIC: ./outputs/DSC-AFC-PSeudo_SemanticKITTI_0413_165328/chkpt/best-metric
+  CONFIG: cfgs/DSC-Pseudo.yaml
+  LAST: ./outputs/DSC-AFC-PSeudo_SemanticKITTI_0413_165328/chkpt/last
   RESUME: true
 TRAIN:
-  BATCH_SIZE: 2
+  BATCH_SIZE: 8
   CHECKPOINT_PERIOD: 15
   EPOCHS: 80
   SUMMARY_PERIOD: 50
