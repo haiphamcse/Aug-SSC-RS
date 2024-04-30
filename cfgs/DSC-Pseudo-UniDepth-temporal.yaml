@@ -62,7 +62,7 @@ DATASET:
   - 1168181
   TYPE: SemanticKITTI
 MODEL:
-  TYPE: DSC-AFC-UniDepth-temporal
+  TYPE: DSC-AFC-Pseudo-UniDepth-temporal
 OPTIMIZER:
   BASE_LR: 0.001
   BETA1: 0.9
@@ -73,17 +73,17 @@ OPTIMIZER:
 OUTPUT:
   BEST_LOSS: 5.0708136558532715
   BEST_METRIC: 0.12719886398260308
-  OUTPUT_PATH: ./outputs/DSC-AFC-UniDepth-temporal_SemanticKITTI_0419_235705
+  OUTPUT_PATH: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal_SemanticKITTI_0419_235705
   OUT_ROOT: ./outputs/
 SCHEDULER:
   FREQUENCY: epoch
   LR_POWER: 0.98
   TYPE: power_iteration
 STATUS:
-  BEST_LOSS: ./outputs/DSC-AFC-UniDepth-temporal_SemanticKITTI_0419_235705/chkpt/best-loss
-  BEST_METRIC: ./outputs/DSC-AFC-UniDepth-temporal_SemanticKITTI_0419_235705/chkpt/best-metric
+  BEST_LOSS: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal_SemanticKITTI_0419_235705/chkpt/best-loss
+  BEST_METRIC: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal_SemanticKITTI_0419_235705/chkpt/best-metric
   CONFIG: cfgs/DSC-Pseudo-UniDepth-temporal.yaml
-  LAST: ./outputs/DSC-AFC-UniDepth-temporal_SemanticKITTI_0419_235705/chkpt/last
+  LAST: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal_SemanticKITTI_0419_235705/chkpt/last
   RESUME: true
 TRAIN:
   BATCH_SIZE: 2

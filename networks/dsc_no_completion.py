@@ -36,7 +36,7 @@ class DSC(nn.Module):
 
         self.preprocess = PcPreprocessor(lims=self.lims, sizes=self.sizes, grid_meters=self.grid_meters, init_size=self.n_height)
         self.sem_branch = SemanticBranch(sizes=self.sizes, nbr_class=nbr_classes-1, init_size=self.n_height, class_frequencies=ss_req, phase=phase)
-        self.com_branch = CompletionBranch(init_size=self.n_height, nbr_class=nbr_classes, phase=phase)
+        # self.com_branch = CompletionBranch(init_size=self.n_height, nbr_class=nbr_classes, phase=phase)
         self.bev_model = BEVUNetv1(self.nbr_classes*self.n_height, self.n_height, self.dilation, self.bilinear, self.group_conv,
                             self.input_batch_norm, self.dropout, self.circular_padding, self.dropblock)
         # self.embedder = nn.Embedding(20, 20)
@@ -78,22 +78,22 @@ class DSC(nn.Module):
         sc_data_dict = {}
         occupancy = example['occupancy'].permute(0, 3, 2, 1) # B, D, H, W
         sc_data_dict['vw_dense'] = occupancy.unsqueeze(1)
-        sc_out_dict = self.com_branch(sc_data_dict, example)
+        # sc_out_dict = self.com_branch(sc_data_dict, example)
 
         inputs = torch.cat([occupancy, bev_dense], dim=1)  # B, C, H, W
-        x = self.bev_model(inputs, ss_out_dict['mss_bev_dense'], sc_out_dict['mss_bev_dense'])
+        x = self.bev_model(inputs, ss_out_dict['mss_bev_dense'], ss_out_dict['mss_bev_dense'])
         # x = self.bev_model(inputs, sc_out_dict['mss_bev_dense'], sc_out_dict['mss_bev_dense'])
         new_shape = [x.shape[0], self.nbr_classes, self.n_height, *x.shape[-2:]]    # [B, 20, 32, 256, 256]
         x = x.view(new_shape)
         out_scale_1_1 = x.permute(0,1,4,3,2)   # [B,20,256,256,32]
 
         if self.phase == 'trainval':
-            loss_dict = self.compute_loss(out_scale_1_1, self.get_target(example)['1_1'], ss_out_dict['loss'], sc_out_dict['loss'])
+            loss_dict = self.compute_loss(out_scale_1_1, self.get_target(example)['1_1'])
             return {'pred_semantic_1_1': out_scale_1_1}, loss_dict
 
         return {'pred_semantic_1_1': out_scale_1_1}
 
-    def compute_loss(self, scores, labels, ss_loss_dict, sc_loss_dict):
+    def compute_loss(self, scores, labels):
         '''
         :param: prediction: the predicted tensor, must be [BS, C, H, W, D]
         '''
@@ -105,12 +105,10 @@ class DSC(nn.Module):
 
         # sem_loss = sem_scal_loss(scores, labels.long())
         # scal_loss = geo_scal_loss(scores, labels.long())
-        loss_seg = sum(ss_loss_dict.values())
-        loss_com = sum(sc_loss_dict.values())
-        loss_total = loss_1_1 + loss_com 
-        # loss_total = loss_1_1 + loss_com
-        # loss = {'total': loss_total, 'semantic_1_1': loss_1_1, 'semantic_seg': loss_seg, 'scene_completion': loss_com}
-        loss = {'total': loss_total, 'semantic_1_1': loss_1_1, 'scene_completion': loss_com}
+        # loss_seg = sum(ss_loss_dict.values())
+        # loss_com = sum(sc_loss_dict.values())
+        loss_total = loss_1_1 
+        loss = {'total': loss_total, 'semantic_1_1': loss_1_1}
         
         return loss
 
@@ -151,9 +149,9 @@ class DSC(nn.Module):
 
     def get_validation_loss_keys(self):
         # return ['total', 'semantic_1_1', 'scene_completion', 'semantic_seg']
-        return ['total', 'semantic_1_1', 'scene_completion', ]
+        return ['total', 'semantic_1_1']
 
     def get_train_loss_keys(self):
         # return ['total', 'semantic_1_1', 'scene_completion', 'semantic_seg']
-        return ['total', 'semantic_1_1', 'scene_completion', ]
+        return ['total', 'semantic_1_1']
 

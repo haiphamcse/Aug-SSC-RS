@@ -62,7 +62,7 @@ DATASET:
   - 1168181
   TYPE: SemanticKITTI
 MODEL:
-  TYPE: DSC-AFC-Pseudo-UniDepth-temporal-color
+  TYPE: DSC-AFC-Pseudo-UniDepth-temporal-filter
 OPTIMIZER:
   BASE_LR: 0.001
   BETA1: 0.9
@@ -71,19 +71,19 @@ OPTIMIZER:
   TYPE: Adam
   WEIGHT_DECAY: NA
 OUTPUT:
-  BEST_LOSS: 5.097275733947754
-  BEST_METRIC: 0.12580239383619668
-  OUTPUT_PATH: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal-color_SemanticKITTI_0421_172339
+  BEST_LOSS: 5.11407470703125
+  BEST_METRIC: 0.12194064175995042
+  OUTPUT_PATH: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal-filter_SemanticKITTI_0426_111834
   OUT_ROOT: ./outputs/
 SCHEDULER:
   FREQUENCY: epoch
   LR_POWER: 0.98
   TYPE: power_iteration
 STATUS:
-  BEST_LOSS: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal-color_SemanticKITTI_0421_172339/chkpt/best-loss
-  BEST_METRIC: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal-color_SemanticKITTI_0421_172339/chkpt/best-metric
-  CONFIG: cfgs/DSC-Pseudo-UniDepth-temporal-Color.yaml
-  LAST: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal-color_SemanticKITTI_0421_172339/chkpt/last
+  BEST_LOSS: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal-filter_SemanticKITTI_0426_111834/chkpt/best-loss
+  BEST_METRIC: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal-filter_SemanticKITTI_0426_111834/chkpt/best-metric
+  CONFIG: cfgs/DSC-Pseudo-UniDepth-temporal-filtering.yaml
+  LAST: ./outputs/DSC-AFC-Pseudo-UniDepth-temporal-filter_SemanticKITTI_0426_111834/chkpt/last
   RESUME: true
 TRAIN:
   BATCH_SIZE: 2

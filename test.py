@@ -19,7 +19,7 @@ from utils.logger import get_logger
 from utils.io_tools import dict_to, _create_directory
 import utils.checkpoint as checkpoint
 
-
+import pickle
 def parse_args():
     parser = argparse.ArgumentParser(description='DSC validating')
     parser.add_argument(
@@ -80,10 +80,20 @@ def test(model, dset, _cfg, logger, out_path_root):
                 input_filename = dset.dataset.filepaths['occupancy'][indices[curr_index]]
                 filename, extension = os.path.splitext(os.path.basename(input_filename))
                 sequence = os.path.dirname(input_filename).split('/')[-2]
-                out_filename = os.path.join(out_path_root, 'sequences', sequence, 'predictions', filename + '.label')
-                _create_directory(os.path.dirname(out_filename))
-                score.tofile(out_filename)
-                logger.info('=> Sequence {} - File {} saved'.format(sequence, os.path.basename(out_filename)))
+                # out_filename = os.path.join(out_path_root, 'sequences', sequence, 'predictions', filename + '.label')
+                # _create_directory(os.path.dirname(out_filename))
+                # score.tofile(out_filename)
+                out_dict = dict(
+                output_voxels=score.astype(np.uint8),
+                    )
+                save_folder = "{}/sequences/{}/voxels".format("visualize/ssc_rs_pseudo_unidepth_temporal", sequence)
+                save_file = os.path.join(save_folder, "{}.label".format(filename))
+                os.makedirs(save_folder, exist_ok=True)
+                score.astype(np.uint16).tofile(save_file)    
+                # with open(save_file, "wb") as handle:
+                #     pickle.dump(out_dict, handle)
+                #     print("wrote to", save_file)
+                # logger.info('=> Sequence {} - File {} saved'.format(sequence, os.path.basename(out_filename)))
                 curr_index += 1
 
     return time_list

@@ -6,6 +6,7 @@ import yaml
 import numpy as np
 from PIL import Image
 from torchvision import transforms
+import open3d as o3d
 
 def mask_op(data, x_min, x_max):
     mask = (data > x_min) & (data < x_max)
@@ -128,7 +129,8 @@ class SemanticKitti(torch.utils.data.Dataset):
                 self.filepaths['occluded'] += sorted(glob(os.path.join(self.data_root, seq, 'voxels', '*.occluded')))
 
             self.filepaths['occupancy'] += sorted(glob(os.path.join(self.data_root.replace('sequences', 'unidepth/accumulated_voxels'), seq, 'voxels', '*.pseudo')))
-        print(self.filepaths['occupancy'])
+        # print(self.filepaths['occupancy'])
+    
     def get_data(self, idx, flip_type):
         data_collection = {}
         sc_remap_lut = self.get_remap_lut(completion=True)
@@ -148,13 +150,26 @@ class SemanticKitti(torch.utils.data.Dataset):
                 scan_data = augmentation_random_flip(scan_data, flip_type)
             data_collection[typ] = torch.from_numpy(scan_data)
 
-        points_path = self.filepaths['occupancy'][idx].replace('accumulated_voxels', 'accumulated_lidar/sequences').replace('voxels', '').replace('pseudo', 'npy')
-        # print(points_path)
+        points_path = self.filepaths['occupancy'][idx].replace('accumulated_voxels', 'accumulated_lidar_seg/sequences').replace('voxels', '').replace('pseudo', 'npy')
         points = np.load(points_path)[:, :4]
         # points = np.fromfile(points_path, dtype=np.float32)
         
         points = points.reshape((-1, 4))
-        # print(points.shape)
+        points_label = np.load(points_path)[:, 4:].reshape((-1))
+        ## Filter points ##
+        # pcd_ = o3d.geometry.PointCloud()
+        # pcd_.points = o3d.utility.Vector3dVector(points[:, :3])
+        # pcd_ = pcd_.voxel_down_sample(voxel_size=0.1)
+
+        # cl, ind = pcd_.remove_radius_outlier(nb_points=15, radius=0.5)
+        # radius_filtered_pc = pcd_.select_by_index(ind)
+        # radius_filtered_pc_np = np.array(radius_filtered_pc.points)
+
+        # new_pc = np.ones_like(radius_filtered_pc_np[:, 0])
+        # new_pc = np.concatenate((radius_filtered_pc_np, new_pc[:, None]), axis=1)
+
+        # points = new_pc
+
         # if self.setname != 'test':
         #     points_label_path = self.filepaths['occupancy'][idx].replace('voxels', 'labels').replace('.bin', '.label')
         #     points_label = np.fromfile(points_label_path, dtype=np.uint32)
@@ -165,24 +180,24 @@ class SemanticKitti(torch.utils.data.Dataset):
         if self.shuffle_index:
             pt_idx = np.random.permutation(np.arange(0, points.shape[0]))
             points = points[pt_idx]
-            # if self.setname != 'test':
-            #     points_label = points_label[pt_idx]
+            if self.setname != 'test':
+                points_label = points_label[pt_idx]
 
         if self.lims:
             filter_mask = get_mask(points, self.lims)
             points = points[filter_mask]
-            # if self.setname != 'test':
-            #     points_label = points_label[filter_mask]
+            if self.setname != 'test':
+                points_label = points_label[filter_mask]
 
         if self.augmentation:
             points = augmentation_random_flip(points, flip_type, is_scan=True)
 
         data_collection['points'] = torch.from_numpy(points)
-        # if self.setname != 'test':
-        #     data_collection['points_label'] = torch.from_numpy(points_label)
-        data_collection['points_label'] = torch.from_numpy(filter_mask)
+        if self.setname != 'test':
+            data_collection['points_label'] = torch.from_numpy(points_label)
+        # data_collection['points_label'] = torch.from_numpy(filter_mask)
 
-        # rgb_path = self.filepaths['occupancy'][idx].replace('voxels', 'image_2').replace('sequences_msnet3d_sweep10', 'sequences').replace('pseudo', 'png')
+        # rgb_path = self.filepaths['occupancy'][idx].replace('unidepth/accumulated_voxels', 'sequences').replace('voxels', 'image_2').replace('pseudo', 'png')
         # img = Image.open(rgb_path)
 
         # Image augmentation
@@ -192,7 +207,8 @@ class SemanticKitti(torch.utils.data.Dataset):
         # PIL to numpy
         # img = np.asarray(img)
         # data_collection['img'] = self.normalize_rgb(img).reshape(-1,3)[filter_mask]
-        data_collection['img'] = torch.from_numpy(np.load(points_path)[:, 4:][filter_mask])
+        # data_collection['img'] = torch.from_numpy(np.load(points_path)[:, 4:][filter_mask])
+        data_collection['img'] = torch.from_numpy(filter_mask)
         return data_collection
 
 

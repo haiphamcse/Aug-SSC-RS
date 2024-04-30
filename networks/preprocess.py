@@ -97,8 +97,7 @@ class PcPreprocessor(nn.Module):
         for scale in self.feature_list.keys():
             bxyz_indx = info[scale]['bxyz_indx'].long()
             pc_feature, topview_mean = self.add_pcmean_and_gridmean(pc, bxyz_indx, return_mean=True)
-            pc_feature = self.multi_scale_top_layers[str(int(10*scale) if scale == 0.5 else scale)](
-                pc_feature, bxyz_indx, mean=topview_mean)
+            pc_feature = self.multi_scale_top_layers[str(int(10*scale) if scale == 0.5 else scale)](pc_feature, bxyz_indx, mean=topview_mean)
             ms_mean_features[scale] = topview_mean
             ms_pc_features.append(pc_feature)
 

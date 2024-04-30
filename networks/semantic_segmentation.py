@@ -13,13 +13,18 @@ import torch.nn.functional as F
 import numpy as np
 from utils.lovasz_losses import lovasz_softmax
 
+from networks.cylinder3d import ResBlock
+
 class BasicBlock(spconv.SparseModule):
     def __init__(self, C_in, C_out, indice_key):
         super(BasicBlock, self).__init__()
+
+        
         self.layers_in = spconv.SparseSequential(
             spconv.SubMConv3d(C_in, C_out, 1, indice_key=indice_key, bias=False),
             nn.BatchNorm1d(C_out),
         )
+        # self.layers = ResBlock(C_in, C_out, indice_key=indice_key)
         self.layers = spconv.SparseSequential(
             spconv.SubMConv3d(C_in, C_out, 3, indice_key=indice_key, bias=False),
             nn.BatchNorm1d(C_out),
@@ -32,8 +37,11 @@ class BasicBlock(spconv.SparseModule):
         )
 
     def forward(self, x):
+        # breakpoint()
+        # out_cylind = self.cylinder_layer(x)
         identity = self.layers_in(x)
         out = self.layers(x)
+        
         output = spconv.SparseConvTensor(sum([i.features for i in [identity, out]]),
                                          out.indices, out.spatial_shape, out.batch_size)
         output.indice_dict = out.indice_dict
@@ -255,7 +263,6 @@ class SemanticBranch(nn.Module):
         #             [vw_label_04.clone(), self.out4(proj2_vw)],
         #             [vw_label_08.clone(), self.out8(proj3_vw)]]
         #     )
-
         return dict(
             mss_bev_dense = [proj1_bev, proj2_bev, proj3_bev]
         )
@@ -266,7 +273,7 @@ class SemanticBranch(nn.Module):
                 data_dict['coord_ind'], data_dict['full_coord'], example['points_label'], data_dict['info'])
             # all_teach_pair = out_dict['mss_logits_list']
 
-            # class_weights = self.get_class_weights().to(device=data_dict['vw_features'].device, dtype=data_dict['vw_features'].dtype)
+            class_weights = self.get_class_weights().to(device=data_dict['vw_features'].device, dtype=data_dict['vw_features'].dtype)
             loss_dict = {}
             # for i in range(len(all_teach_pair)):
             #     teach_pair = all_teach_pair[i]
