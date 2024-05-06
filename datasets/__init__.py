@@ -1,7 +1,8 @@
 
 import torch
-from .semantic_kitti_pseudo_temporal import SemanticKitti
+# from .semantic_kitti_pseudo_temporal import SemanticKitti
 # from .semantic_kitti_pseudo import SemanticKitti
+from .semantic_kitti_pseudo_bin import SemanticKitti
 
 
 def collate_fn(data):

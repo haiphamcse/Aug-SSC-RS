@@ -148,9 +148,9 @@ class SemanticKitti(torch.utils.data.Dataset):
                 scan_data = augmentation_random_flip(scan_data, flip_type)
             data_collection[typ] = torch.from_numpy(scan_data)
 
-        points_path = self.filepaths['occupancy'][idx].replace('voxels', '').replace('sequences_msnet3d_sweep10', 'unidepth/lidar_color/sequences').replace('pseudo', 'npy')
-        # points = np.fromfile(points_path, dtype=np.float32)
-        points = np.load(points_path)[:, :4]
+        points_path = self.filepaths['occupancy'][idx].replace('voxels', '').replace('sequences_msnet3d_sweep10', 'unidepth/lidar_bin_single').replace('pseudo', 'bin').replace('//', '/')
+        points = np.fromfile(points_path, dtype=np.float32)
+        # points = np.load(points_path)[:, :4]
         points = points.reshape((-1, 4))
 
         # if self.setname != 'test':
